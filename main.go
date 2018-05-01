@@ -1,57 +1,13 @@
 package main
 
 import (
-	"archive/zip"
 	"flag"
 	"fmt"
-	"io"
 	"log"
-	"os"
 	"strings"
+
+	"github.com/ConradPacesa/zip/zip"
 )
-
-func zipFiles(filename string, files []string) error {
-	newfile, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer newfile.Close()
-
-	zipWriter := zip.NewWriter(newfile)
-	defer zipWriter.Close()
-
-	for _, file := range files {
-		zipfile, err := os.Open(file)
-		if err != nil {
-			return err
-		}
-		defer zipfile.Close()
-
-		info, err := zipfile.Stat()
-		if err != nil {
-			return err
-		}
-
-		header, err := zip.FileInfoHeader(info)
-		if err != nil {
-			return err
-		}
-
-		header.Method = zip.Deflate
-
-		writer, err := zipWriter.CreateHeader(header)
-		if err != nil {
-			return err
-		}
-
-		_, err = io.Copy(writer, zipfile)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
 
 func main() {
 	out := flag.String("o", "", "The output destination of your zipped folder (required)")
@@ -70,10 +26,16 @@ func main() {
 	fileSlice := flag.Args()
 	fileSlice = append(fileSlice, *file)
 
-	err := zipFiles(*out, fileSlice)
-
-	if err != nil {
-		log.Fatal(err)
+	if len(fileSlice) > 1 {
+		err := zip.ZipFiles(*out, fileSlice)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		err := zip.ZipDir(*out, *file)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	fmt.Println("Zipped File: " + *out)
