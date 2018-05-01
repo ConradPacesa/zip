@@ -7,18 +7,8 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 )
-
-type arrayFlags []string
-
-func (i *arrayFlags) String() string {
-	return "my string representation"
-}
-
-func (i *arrayFlags) Set(value string) error {
-	*i = append(*i, value)
-	return nil
-}
 
 func zipFiles(filename string, files []string) error {
 	newfile, err := os.Create(filename)
@@ -64,14 +54,23 @@ func zipFiles(filename string, files []string) error {
 }
 
 func main() {
-	var myFlags arrayFlags
-
-	out := flag.String("o", "", "The output destination of your zipped folder")
-	flag.Var(&myFlags, "f", "The file you want to zip")
+	out := flag.String("o", "", "The output destination of your zipped folder (required)")
+	file := flag.String("f", "", "The file(s) you want to zip (required)")
 
 	flag.Parse()
 
-	err := zipFiles(*out, myFlags)
+	if !strings.HasSuffix(*out, ".zip") {
+		log.Fatal("You must specify a valid outfile with a .zip extension")
+	}
+
+	if *file == "" {
+		log.Fatal("You must specify at least one file or folder to zip up.")
+	}
+
+	fileSlice := flag.Args()
+	fileSlice = append(fileSlice, *file)
+
+	err := zipFiles(*out, fileSlice)
 
 	if err != nil {
 		log.Fatal(err)
